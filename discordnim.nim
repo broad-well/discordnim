@@ -1,2 +1,2 @@
-import src/[discord, objects, restapi]
-export discord, objects, restapi
+import src/[discord, objects, restapi, dsl]
+export discord, objects, restapi, dsl

@@ -855,7 +855,7 @@ proc join(g1: var Guild, g2: Guild) =
     g1.channels = g2.channels
     g1.presences = g2.presences
 
-type CacheError = object of Exception
+type CacheError = object of ValueError
 
 # Caching stuff
 proc getGuild*(c: Cache, id: string): tuple[guild: Guild, exists: bool] {.gcsafe.} =

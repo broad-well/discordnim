@@ -1,3 +1,9 @@
 *.o
 *.c
 *.json
+
+# don't leak my bot token pls
+secretToken
+
+# no binaries
+**/*.exe

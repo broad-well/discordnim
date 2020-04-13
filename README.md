@@ -1,6 +1,6 @@
 # Discordnim
 
-A Discord library for Nim.
+A Discord library for Nim, with a sweet DSL to abstract the details away.
 
 Websockets from [niv/websocket.nim](https://github.com/niv/websocket.nim)
 
@@ -18,12 +18,28 @@ Copyright (c) 2006-2019 by Andreas Rumpf
 active boot switches: -d:release
 ```
 
-`nimble install discordnim`
+`nimble install https://github.com/broad-well/discordnim`
 
 # Usage
 
 There are some examples in the `examples` folder.
 
+Use the DSL to define commands:
+
+```nim
+import discordnim
+
+# the shard is assigned to a variable "bot", and the token ("Bot <token>") is read from a local file
+discordBot bot, readFile("secretToken"):
+  commands "^":
+    # will respond to "^test <args>"; assign CommandInvocation to "message" and the remaining command arguments (array[string]) to "args"
+    command "test", message, args:
+      message.reply("hello world!", mention=true)
+
+  # run before starting shard session (variable "bot" is available)
+  setup:
+    echo "the gateway is " & bot.gateway
+```
 
 Initialising a `Shard`:
 
@@ -57,7 +73,7 @@ nimble build -d:ssl
 ```
 OR
 ```
-nim compile -d:ssl --run youfile.nim
+nim compile -d:ssl --run yourfile.nim
 ```
 
 When compression is enabled you need a `zlib1.dll` present. Somewhere. I don't know where it should be placed.
