@@ -473,11 +473,13 @@ type
         `type`*: int
         url*: Option[string]
         # session_id: string # Should appear at some point in the payload
+    PresenceUpdateUser* = object
+        id*: string
     PresenceUpdate* = object
-        user*: User
-        nick: string
+        user*: PresenceUpdateUser
+        nick*: Option[string]
         roles*: seq[string]
-        game*: Game
+        game*: Option[Game]
         guild_id*: string
         status*: string
     TypingStart* = object
