@@ -38,9 +38,9 @@ template endpointChannelMessage*(cid, mid: string): string = endpointChannelMess
 
 template endpointReactions*(cid, mid: string): string = endpointChannelMessage(cid, mid) & "/reactions"
 
-template endpointOwnReactions*(cid, mid, eid: string): string = endpointReactions(cid, mid) & "/@me"
+template endpointOwnReactions*(cid, mid, eid: string): string = endpointMessageReactions(cid, mid, eid) & "/@me"
 
-template endpointMessageReactions*(cid, mid, eid: string): string = endpointReactions(cid, mid) & eid
+template endpointMessageReactions*(cid, mid, eid: string): string = endpointReactions(cid, mid) & "/" & eid
 
 template endpointMessageUserReaction*(cid, mid, eid, uid: string): string = endpointMessageReactions(cid, mid, eid) & "/" & uid
 

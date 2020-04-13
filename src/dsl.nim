@@ -1,5 +1,5 @@
 import discord, objects, restapi
-import strutils, asyncfutures, strformat, asyncdispatch, options
+import strutils, asyncfutures, strformat, asyncdispatch, options, json, uri
 import macros
 
 type
@@ -14,6 +14,9 @@ proc reply*(self: CommandInvocation, response: string, mention: bool = false, wa
         discard waitFor future
     else:
         asyncCheck future
+
+proc react*(self: CommandInvocation, emoji: string) =
+    asyncCheck self.shard.channelMessageReactionAdd(self.message.channel_id, self.message.id, encodeUrl(emoji))
 
 # Internal literals
 const intLitPrefix = "discordnim_"
@@ -79,6 +82,7 @@ macro discordBot*(botVarName: untyped, token: string, body: untyped): untyped =
         let `botVarName` = newShard(`token`)
 
         proc endSession() {. noconv .} =
+            echo "Stopping..."
             waitFor `botVarName`.disconnect()
 
         setControlCHook(endSession)
@@ -87,6 +91,3 @@ macro discordBot*(botVarName: untyped, token: string, body: untyped): untyped =
         `setup`
         waitFor `botVarName`.startSession()
         removeProc()
-
-    # debugging
-    debugEcho result.toStrLit

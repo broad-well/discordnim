@@ -36,7 +36,17 @@ proc request(s: Shard,
 
 proc doreq(s: Shard, meth, endpoint, payload: string = "", xheaders: HttpHeaders = nil, mpd: MultipartData = nil): Future[JsonNode] {.gcsafe, async.} =
     let res = await s.request(endpoint, meth, endpoint, "application/json", payload, 0, xheaders = xheaders)
-    result = (await res.body).parseJson
+    var body = await res.body
+    body.stripLineEnd()
+
+    if body.len > 0:
+        try:
+            result = body.parseJson
+        except JsonParsingError as error:
+            debugEcho body
+            raise error
+    else:
+        result = newJObject()
 
 proc channel*(s: Shard, channel_id: string): Future[Channel] {.gcsafe, async.} =
     result = (await doreq(s, endpointChannels(channel_id))).newChannel
@@ -129,7 +139,7 @@ proc channelFileSend*(s: Shard, channelid, fname, fbody: string): Future[Message
 
 proc channelMessageReactionAdd*(s: Shard, channelid, messageid, emojiid: string) {.gcsafe, inline, async.} =
     ## Adds a reaction to a message
-    asyncCheck doreq(s, "PUT", endpointMessageReactions(channelid, messageid, emojiid))
+    asyncCheck doreq(s, "PUT", endpointOwnReactions(channelid, messageid, emojiid))
 
 proc messageDeleteOwnReaction*(s: Shard, channelid, messageid, emojiid: string) {.gcsafe, inline, async.} =
     ## Deletes your own reaction to a message

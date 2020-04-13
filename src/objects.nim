@@ -545,7 +545,7 @@ type
         user_id*: string
         message_id*: string
         channel_id*: string
-        guild_id*: string
+        guild_id*: Option[string]
         emoji*: Emoji
     MessageReactionRemove* = MessageReactionAdd
     MessageReactionRemoveAll* = object
