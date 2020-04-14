@@ -32,7 +32,7 @@ proc react*(self: CommandInvocation, emoji: string) =
 # Static region begins
 # --------------------
 
-## Parse command declaration (command "ping", msg: <body>) to an ``of`` branch of the message handler
+## Parse command declaration (command "ping", msg: <body>) to a CommandHandler instance
 proc parseCommandToHandler(commandNode: NimNode, prefix: string = ""): CommandHandler =
     expectLen(commandNode, 4)
     expectIdent(commandNode[0], "command")
@@ -112,10 +112,11 @@ macro discordBot*(botVarName: untyped, token: string, body: untyped): untyped =
         else:
             error(&"unknown discordBot top-level directive: {commandSet[0].strVal}", commandSet)
 
-    let helpCaseStmt = nnkCaseStmt.newTree(nnkBracketExpr.newTree(tokensLit, newLit(0)))
     if subcommands.len > 0:
         for ofCase in helpOfCases(subcommands, messageLit, globalHelpPrefix = none(string)):
-            helpCaseStmt.add(ofCase)
+            tokenDispatchCaseStmt.add(ofCase)
+
+    let tokenDispatchNode = if tokenDispatchCaseStmt.len == 0: nnkEmpty.newTree() else: tokenDispatchCaseStmt
     
     let callbackIdent = genSym(kind = nskProc, ident = "messageCreate")
     result = quote do:
@@ -126,8 +127,7 @@ macro discordBot*(botVarName: untyped, token: string, body: untyped): untyped =
             let `tokensLit` = mc.content.split(" ")
             if `tokensLit`.len == 0: return
             let `messageLit` = CommandInvocation(message: mc, args: `tokensLit`, shard: s)
-            `tokenDispatchCaseStmt`
-            `helpCaseStmt`
+            `tokenDispatchNode`
 
         let `botVarName` = newShard(`token`)
 
