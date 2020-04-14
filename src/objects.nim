@@ -483,7 +483,7 @@ type
         guild_id*: string
         status*: string
     TypingStart* = object
-        guild_id*: string
+        guild_id*: Option[string]
         channel_id*: string
         user_id*: string
         timestamp*: int

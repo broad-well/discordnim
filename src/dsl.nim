@@ -1,5 +1,5 @@
 import discord, objects, restapi
-import strutils, asyncfutures, strformat, asyncdispatch, options, json, uri, tables
+import algorithm, asyncfutures, strformat, asyncdispatch, options, json, uri, tables, strutils, sequtils
 import macros
 
 type
@@ -40,7 +40,7 @@ proc parseCommandToHandler(commandNode: NimNode, prefix: string = ""): CommandHa
     result.handlerInvocationLit = commandNode[2]
     result.handlerBody = commandNode[3]
     if result.handlerBody[0].kind == nnkTripleStrLit:
-        let rawHelpText = result.handlerBody[0].strVal
+        let rawHelpText = result.handlerBody[0].strVal.strip
         result.handlerBody.del(0)
         result.help = some(rawHelpText)
 
@@ -54,6 +54,29 @@ proc toOfBranch(handler: CommandHandler, messageId: NimNode): NimNode =
     
     return nnkOfBranch.newTree(newLit(handler.fullPrefix), body)
 
+proc commandPrefixHelp(handlers: seq[CommandHandler]; prefix: string = ""): string =
+    result = if prefix == "": "**All commands:**\n\n" else: &"**All commands with prefix `{prefix}`:**\n\n"
+    for handler in handlers.sortedByIt(it.fullPrefix):
+        let docstr = handler.help.get(otherwise = "No help available.")
+        result &= &"`{handler.fullPrefix}`: {docstr}\n"
+
+iterator helpOfCases(subcommands: TableRef[string, seq[CommandHandler]]; messageLit: NimNode;
+                     globalHelpPrefix: Option[string]): NimNode =
+
+    for (prefix, handlers) in subcommands.pairs():
+        let helpString = newStrLitNode(commandPrefixHelp(handlers, prefix))
+        let callback = quote do:
+            `messageLit`.reply(`helpString`)
+        yield nnkOfBranch.newTree(newLit(prefix & "help"), callback)
+
+    if globalHelpPrefix.isSome():
+        let allCommands = toSeq(subcommands.values()).concat()
+        let helpString = newStrLitNode(commandPrefixHelp(allCommands))
+        let callback = quote do:
+            `messageLit`.reply(`helpString`)
+        yield nnkOfBranch.newTree(newLit(globalHelpPrefix.get() & "help"), callback)
+
+
 macro discordBot*(botVarName: untyped, token: string, body: untyped): untyped =
     ## Parent macro for the command-based Discord bot DSL.
     ## Find examples in the README and the `examples/` folder.
@@ -62,7 +85,7 @@ macro discordBot*(botVarName: untyped, token: string, body: untyped): untyped =
     let tokensLit = genSym(ident = "tokens")
     let messageLit = genSym(ident = "message")
     let tokenDispatchCaseStmt = nnkCaseStmt.newTree(nnkBracketExpr.newTree(tokensLit, newLit(0)))
-    var subcommands: Table[string, seq[CommandHandler]]
+    var subcommands = newTable[string, seq[CommandHandler]]()
     var setup = newStmtList()
     
     for commandSet in body:
@@ -88,16 +111,23 @@ macro discordBot*(botVarName: untyped, token: string, body: untyped): untyped =
             setup = commandSet[1]
         else:
             error(&"unknown discordBot top-level directive: {commandSet[0].strVal}", commandSet)
+
+    let helpCaseStmt = nnkCaseStmt.newTree(nnkBracketExpr.newTree(tokensLit, newLit(0)))
+    if subcommands.len > 0:
+        for ofCase in helpOfCases(subcommands, messageLit, globalHelpPrefix = none(string)):
+            helpCaseStmt.add(ofCase)
     
+    let callbackIdent = genSym(kind = nskProc, ident = "messageCreate")
     result = quote do:
         import asyncdispatch, strutils
 
-        proc discordnim_onMessageCreate(s: Shard; mc: MessageCreate) =
+        proc `callbackIdent`(s: Shard; mc: MessageCreate) =
             if s.cache.me.id == mc.author.id: return
             let `tokensLit` = mc.content.split(" ")
             if `tokensLit`.len == 0: return
             let `messageLit` = CommandInvocation(message: mc, args: `tokensLit`, shard: s)
             `tokenDispatchCaseStmt`
+            `helpCaseStmt`
 
         let `botVarName` = newShard(`token`)
 
@@ -107,9 +137,7 @@ macro discordBot*(botVarName: untyped, token: string, body: untyped): untyped =
 
         setControlCHook(endSession)
 
-        let removeProc = `botVarName`.addHandler(EventType.message_create, discordnim_onMessageCreate)
+        let removeProc = `botVarName`.addHandler(EventType.message_create, `callbackIdent`)
         `setup`
         waitFor `botVarName`.startSession()
         removeProc()
-
-    debugEcho result.toStrLit
