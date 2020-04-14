@@ -154,12 +154,12 @@ proc each(arr: seq[pointer], s: Shard) =
     for p in arr:
         cast[proc(_: Shard){.cdecl.}](p)(s)
 
-proc each[T](s: Shard, want: EventType, data: T) {.async, gcsafe.} =
+proc each[T](s: Shard, want: EventType, data: T) {.async.} =
     if s.handlers.hasKey(want):
         for p in s.handlers[want]:
             cast[proc(_: Shard, d: T){.cdecl.}](p)(s, data)
 
-proc handleDispatch(s: Shard, event: string, data: JsonNode) {.async, gcsafe.} =
+proc handleDispatch(s: Shard, event: string, data: JsonNode) {.async.} =
     case event:
         of "READY":
             let payload = newReady(data)
@@ -321,7 +321,7 @@ proc setupHeartbeats(s: Shard) {.async, gcsafe.} =
             echo getCurrentExceptionMsg()
             break
 
-proc sessionHandleSocketMessage(s: Shard) {.async, gcsafe.} =
+proc sessionHandleSocketMessage(s: Shard) {.async.} =
     waitFor s.identify()
 
     var res: tuple[opcode: Opcode, data: string]

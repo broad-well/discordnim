@@ -32,9 +32,10 @@ import discordnim
 # the shard is assigned to a variable "bot", and the token ("Bot <token>") is read from a local file
 discordBot bot, readFile("secretToken"):
   commands "^":
-    # will respond to "^test <args>"; assign CommandInvocation to "message" and the remaining command arguments (array[string]) to "args"
-    command "test", message, args:
-      message.reply("hello world!", mention=true)
+    # will respond to "^test <args>"; assign CommandInvocation to "message"
+    command "test", message:
+      message.reply("hello world!")
+      message.react("😎")
 
   # run before starting shard session (variable "bot" is available)
   setup:
