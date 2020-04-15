@@ -125,14 +125,14 @@ macro discordBot*(botVarName: untyped, token: string, body: untyped): untyped =
     result = quote do:
         import asyncdispatch, strutils
 
+        let `botVarName` = newShard(`token`)
+
         proc `callbackIdent`(s: Shard; mc: MessageCreate) =
             if s.cache.me.id == mc.author.id: return
             let `tokensLit` = mc.content.split(" ")
             if `tokensLit`.len == 0: return
             let `messageLit` = CommandInvocation(message: mc, args: `tokensLit`, shard: s)
             `tokenDispatchNode`
-
-        let `botVarName` = newShard(`token`)
 
         proc endSession() {. noconv .} =
             echo "Stopping..."
