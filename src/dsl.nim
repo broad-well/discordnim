@@ -131,7 +131,7 @@ macro discordBot*(botVarName: untyped, token: string, body: untyped): untyped =
             if s.cache.me.id == mc.author.id: return
             let `tokensLit` = mc.content.split(" ")
             if `tokensLit`.len == 0: return
-            let `messageLit` = CommandInvocation(message: mc, args: `tokensLit`, shard: s)
+            let `messageLit` = CommandInvocation(message: mc, args: `tokensLit`[1..^1], shard: s)
             `tokenDispatchNode`
 
         proc endSession() {. noconv .} =
