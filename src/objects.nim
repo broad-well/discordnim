@@ -520,7 +520,9 @@ type
         last_pin_timestamp*: string
         channel_id*: string
     MessageCreate* = Message
-    MessageUpdate* = Message
+    MessageUpdate* = object
+        id*: string
+        channel_id*: string
     MessageDelete* = Message
     GuildMemberAdd* = GuildMember
     GuildMemberUpdate* = GuildMember

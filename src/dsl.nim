@@ -3,17 +3,22 @@ import algorithm, asyncfutures, strformat, asyncdispatch, options, json, uri, ta
 import macros
 
 type
-    CommandInvocation* = object
+    MessageEvent* = object of RootObj
         message*: Message
-        args*: seq[string]
         shard*: Shard
+    CommandInvocation* = object of MessageEvent
+        args*: seq[string]
     CommandHandler = object
         fullPrefix: string
         handlerBody: NimNode
         handlerInvocationLit: NimNode
         help: Option[string]
 
-proc reply*(self: CommandInvocation, response: string, mention: bool = false, wait: bool = false) =
+func toEvent*(self: Message, shard: Shard): MessageEvent =
+    result.message = self
+    result.shard = shard
+
+proc reply*(self: MessageEvent, response: string, mention: bool = false, wait: bool = false) =
     ## Reply to the given `CommandInvocation` with the given response. Optionally mention the author of the invoking message.
     ## Optionally wait for the message to be sent.
     let prefix = if mention: &"<@{self.message.author.id}> " else: ""
@@ -26,7 +31,7 @@ proc reply*(self: CommandInvocation, response: string, mention: bool = false, wa
 proc react*(self: Message, shard: Shard, emoji: string) =
     asyncCheck shard.channelMessageReactionAdd(self.channel_id, self.id, encodeUrl(emoji))
 
-proc react*(self: CommandInvocation, emoji: string) =
+proc react*(self: MessageEvent, emoji: string) =
     ## React to the message that invoked the command.
     ## `emoji` can be an actual emoji symbol, an emoji code with colons, or an emoji ID
     self.message.react(self.shard, emoji)
