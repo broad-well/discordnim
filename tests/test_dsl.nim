@@ -9,3 +9,5 @@ discordBot bot, readFile("secretToken"):
 
   setup:
     echo "hello, setting up"
+    discard bot.addHandler(message_create) do (s: Shard, mc: MessageCreate):
+      mc.react(s, "🆒")
