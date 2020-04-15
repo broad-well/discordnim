@@ -630,6 +630,9 @@ proc addHandler*(d: Shard, t: EventType, p: pointer): (proc()) {.gcsafe, inline.
     result = proc()=
         d.handlers[t].del(i)
 
+proc clearHandlers*(d: Shard) =
+    d.handlers.clear()
+
 # proc `%`*[T](o: Option[T]): JsonNode =
 #     new(result)
 #     let default = when T is SomeInteger:

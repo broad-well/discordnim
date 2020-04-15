@@ -23,10 +23,13 @@ proc reply*(self: CommandInvocation, response: string, mention: bool = false, wa
     else:
         asyncCheck future
 
+proc react*(self: Message, shard: Shard, emoji: string) =
+    asyncCheck shard.channelMessageReactionAdd(self.channel_id, self.id, encodeUrl(emoji))
+
 proc react*(self: CommandInvocation, emoji: string) =
     ## React to the message that invoked the command.
     ## `emoji` can be an actual emoji symbol, an emoji code with colons, or an emoji ID
-    asyncCheck self.shard.channelMessageReactionAdd(self.message.channel_id, self.message.id, encodeUrl(emoji))
+    self.message.react(self.shard, emoji)
 
 # --------------------
 # Static region begins
@@ -137,7 +140,7 @@ macro discordBot*(botVarName: untyped, token: string, body: untyped): untyped =
 
         setControlCHook(endSession)
 
-        let removeProc = `botVarName`.addHandler(EventType.message_create, `callbackIdent`)
+        discard `botVarName`.addHandler(EventType.message_create, `callbackIdent`)
         `setup`
         waitFor `botVarName`.startSession()
-        removeProc()
+        `botVarName`.clearHandlers()
